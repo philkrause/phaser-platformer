@@ -43,9 +43,9 @@ class GameScene extends Phaser.Scene {
 
     preload() {
         this.load.image('background', '../assets/images/city_top2.png');
-        this.load.image('player', '../assets/images/player_y.png');
+        this.load.image('player', '../assets/images/red_car1.png');
         this.load.image('car1', '../assets/images/car_o.png');
-        this.load.image('car2', '../assets/images/car_o.png');
+        this.load.image('car2', '../assets/images/player_y.png');
         this.load.image('blue', '../assets/images/blue.png');
         this.load.image('fuel_meter', '../assets/images/fuel_meter.png');
         this.load.image('fuel','../assets/images/fuel.png')
@@ -55,6 +55,7 @@ class GameScene extends Phaser.Scene {
         this.cursors = this.input.keyboard.createCursorKeys();
         this.counter = 0;
         this.distanceTraveled = 0;
+        this.hotpink = '#ee82ee'
     }
 
 //CREATE===================================================================================
@@ -84,7 +85,7 @@ class GameScene extends Phaser.Scene {
             .setDrag(100)
             .setOrigin(.5,1)
             .setBounce(1)
-            .setScale(1.4)
+            .setScale(1.3)
 
         //player light---------------------------------------
         this.playerLight = this.lights.addLight(this.player.x, this.player.y, 128);
@@ -102,6 +103,7 @@ class GameScene extends Phaser.Scene {
         //Spawn Items----------------------------------------------
         this.spawnItem = (sprite,scale) => {
             this.item = this.physics.add.sprite(Phaser.Math.Between(0, this.gameWidth), 0, sprite)
+            this.item.setSize(8,10)
             this.item.setVelocityY(Phaser.Math.Between(10,30))
             this.item.setScale(scale)
             this.itemLight = this.lights.addLight();
@@ -196,6 +198,8 @@ class GameScene extends Phaser.Scene {
                 targets: [player],
                 y: +300
             })
+            this.cameras.main.shake(200, 0.02);
+
         }
 
 
@@ -227,7 +231,7 @@ class GameScene extends Phaser.Scene {
         this.speedText.setText(`${Math.ceil(this.currentSpeed)}`)
         this.background.tilePositionY -= 1000/(this.player.y);
 
-        //UI
+        //UI#EB09FE
         //create live counter
         this.counter += 1
         
@@ -279,11 +283,11 @@ class GameScene extends Phaser.Scene {
         //Fuel------------------------------
         //check multiple of %x that equals 0 //basically the lower x is, the more spawns
         if (this.counter %1000 == 0){
-            this.spawnItem('car1',.8)
+            this.spawnItem('car1',1)
         }
 
-        if (this.counter %100 == 0){
-            this.spawnItem('car2',.9)
+        if (this.counter %50 == 0){
+            this.spawnItem('car2',1.6)
         }
 
         //loop through the array of fuel
@@ -295,7 +299,7 @@ class GameScene extends Phaser.Scene {
             light.y = item.y;
 
         // Define the overlap callback function
-        let fuelC = (player, collectedItem) => {
+        let carCollision = (player, collectedItem) => {
             // Check if player collects fuel
             if (collectedItem === item) {
                this.hitCar(player)
@@ -306,7 +310,7 @@ class GameScene extends Phaser.Scene {
             }
         };
             //if player collects fuel
-            this.physics.add.overlap(this.player,item, fuelC) 
+            this.physics.add.overlap(this.player,item, carCollision) 
 
             //remove item from array if off screen and destroy it
             if (item.y > this.gameHeight) {
@@ -323,7 +327,7 @@ class GameScene extends Phaser.Scene {
         //Update the fuel bar
         if(this.fuelBar){
             this.fuelBar.clear()
-            this.fuelBar = this.makeFuelBar(this.gameWidth - 11, this.gameHeight * .71, '0x2eec71',this.fuelUsed)
+            this.fuelBar = this.makeFuelBar(this.gameWidth - 11, this.gameHeight * .71, '0xff6984', this.fuelUsed)
         }
 
         if (this.fuelUsed <= 0 && this.gameOverStatus == false) {
