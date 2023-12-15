@@ -4,4 +4,4 @@ import phaserConfig from './config/config';
 
 
 const game = new Phaser.Game(phaserConfig);
-game.scene.start('TitleSceneKey');
+game.scene.start('GameSceneKey');
