@@ -12,7 +12,7 @@ var startSceneConfig = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 50 },
+            gravity: { y: 0 },
             debug: DEBUG_MODE
         }
     }

@@ -36,6 +36,8 @@ class GameScene extends Phaser.Scene {
         this.gameOver;
         this.fuelCollected;
         this.hitCar;
+        this.boostPlayer;
+        this.createPoints;
     }
 
 //PRELOAD===================================================================================
@@ -44,8 +46,8 @@ class GameScene extends Phaser.Scene {
     preload() {
         this.load.image('background', '../assets/images/city_top2.png');
         this.load.image('player', '../assets/images/red_car1.png');
-        this.load.image('car1', '../assets/images/car_o.png');
-        this.load.image('car2', '../assets/images/player_y.png');
+        this.load.image('car1', '../assets/images/player_y.png');
+        this.load.image('car2', '../assets/images/car_b.png');
         this.load.image('blue', '../assets/images/blue.png');
         this.load.image('fuel_meter', '../assets/images/fuel_meter.png');
         this.load.image('fuel','../assets/images/fuel.png')
@@ -100,15 +102,6 @@ class GameScene extends Phaser.Scene {
             }
         }); 
 
-        //Spawn Items----------------------------------------------
-        this.spawnItem = (sprite,scale) => {
-            this.item = this.physics.add.sprite(Phaser.Math.Between(0, this.gameWidth), 0, sprite)
-            this.item.setSize(8,10)
-            this.item.setVelocityY(Phaser.Math.Between(10,30))
-            this.item.setScale(scale)
-            this.itemLight = this.lights.addLight();
-            this.itemLightsArray.push({item:this.item,light:this.itemLight})
-        };
 
         //Particles----------------------------------------------
         const emitter = this.add.particles(0, 0, 'blue', {
@@ -156,7 +149,7 @@ class GameScene extends Phaser.Scene {
             bar.fillRect(0,0,20,2)
             bar.x = x;
             bar.y = y;
-            bar.angle = 1.2 * percentage + 90 
+            bar.angle = 1.5 * percentage + 90 
             return bar
         }
 
@@ -193,13 +186,48 @@ class GameScene extends Phaser.Scene {
             this.player.disableBody(true,false)
         }
 
+        //Collisions
         this.hitCar = (player) => {
             this.tweens.add({
                 targets: [player],
                 y: +300
             })
             this.cameras.main.shake(200, 0.02);
+        }
 
+        this.boostPlayer = (speed, background) => {
+            speed * 10
+            background * 10
+        }
+
+
+        //Spawn Items----------------------------------------------
+        this.spawnItem = (sprite,scale,xSize,ySize) => {
+            this.itemLight = this.lights.addLight();
+            let item = this.physics.add.sprite(Phaser.Math.Between(0, this.gameWidth), 0, sprite)
+            item.setSize(xSize,ySize)
+            item.setVelocityY(Phaser.Math.Between(10,30))
+            item.setScale(scale)
+            this.itemLightsArray.push({allItems:item,light:this.itemLight})
+        };
+
+        this.createPoints = (points,itemx,itemy) => {
+            // Create the text at a specific position (adjust x and y coordinates)
+            let text = this.add.bitmapText(itemx,itemy, 'carrier_command',`${points}`).setTint(0xff0000).setOrigin(.5).setScale(.2);
+
+            text.setOrigin(0.5);
+
+            // Create a tween to move the text upwards and fade it out
+            let textTween = this.tweens.add({
+                targets: text,
+                y: -100, // Move the text upward (adjust the value based on desired distance)
+                alpha: 0, // Fade out the text
+                duration: 2000, // Duration of the tween in milliseconds
+                ease: 'Linear', // Easing function (e.g., Linear, Quad, etc.)
+                onComplete: () => {
+                    text.destroy(); // Destroy the text after the tween completes
+                }
+            });
         }
 
 
@@ -239,18 +267,6 @@ class GameScene extends Phaser.Scene {
         this.distanceTraveledText.setText(`distance: ${this.distanceTraveled.toFixed(2)}mi`)
         this.counterText.setText(`time: ${(this.counter/60).toFixed(2)}`)
 
-        //dialogue------------------------------------------------
-        // if (this.currentCharIndex < this.introText.length) {
-        //     this.dialogueText.text += this.introText[this.currentCharIndex];
-        //     this.currentCharIndex++; 
-        // }
-        // if (this.currentCharIndex >= this.introText.length && this.tweenPlayed == false) {
-        //     this.time.removeEvent(this.updateText);
-        //     this.currentCharIndex = this.introText.length
-        //     this.introTextTween.play(); 
-        //     this.tweenPlayed = true
-        // }
-
          //player movement-----------------------------------------
          if (this.cursors.left.isDown)
          {
@@ -282,42 +298,58 @@ class GameScene extends Phaser.Scene {
 
         //Fuel------------------------------
         //check multiple of %x that equals 0 //basically the lower x is, the more spawns
-        if (this.counter %1000 == 0){
-            this.spawnItem('car1',1)
+        if (this.counter %80 == 0){
+            this.spawnItem('fuel',.04,400,400)
         }
 
+        //Spawn Traffic
         if (this.counter %50 == 0){
-            this.spawnItem('car2',1.6)
+            this.spawnItem('car1',1.4,8,10)
         }
 
-        //loop through the array of fuel
-        this.itemLightsArray.forEach((itemLight, index) => {
-            const item = itemLight.item;
-            const light = itemLight.light;
+        //loop through ALL ITEMS and determine each outcome
+        this.itemLightsArray.forEach((eachItem, index) => {
+            const item = eachItem.allItems;
+            const light = eachItem.light;
 
             light.x = item.x;
             light.y = item.y;
 
-        // Define the overlap callback function
-        let carCollision = (player, collectedItem) => {
-            // Check if player collects fuel
-            if (collectedItem === item) {
-               this.hitCar(player)
-                // Remove the item from the array and destroy it
-                this.lights.removeLight(light);
-                this.itemLightsArray.splice(index, 1);
-                item.destroy();
-            }
-        };
-            //if player collects fuel
-            this.physics.add.overlap(this.player,item, carCollision) 
+            //Collisions-----------------------------------------------------
+            let carCollision = (player, collectedItem) => {
+                // Check if player hits car
+                if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "car1") {
+                this.hitCar(player)
+                    // Remove the item from the array and destroy it
+                    this.lights.removeLight(light);
+                    this.itemLightsArray.splice(index, 1);
+                    item.destroy();
+                }
+                if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "fuel") {
+                        // Remove the item from the array and destroy it
+                        this.totalFuel += 2;
+                        this.createPoints(1000,eachItem.allItems.x,eachItem.allItems.y)
+                        this.tweens.add({
+                            targets: this.background.tilePosition,
+                            tilePositionY: -2000, // Set the target Y position
+                            duration: 1000, // Duration of the tween in milliseconds
+                            ease: 'Linear', // Easing function (e.g., Linear, Quad, etc.)
+                            repeat: -1, // Repeat indefinitely (-1 means repeat forever)
+                        });
+                        this.lights.removeLight(light);
+                        this.itemLightsArray.splice(index, 1);
+                        item.destroy();
+                    }
+            };
+                //if player collects fuel
+                this.physics.add.overlap(this.player,eachItem.allItems, carCollision) 
 
-            //remove item from array if off screen and destroy it
-            if (item.y > this.gameHeight) {
-                this.lights.removeLight(light);
-                this.itemLightsArray.splice(index, 1);
-                item.destroy
-            }
+                //remove item from array if off screen and destroy it
+                if (item.y > this.gameHeight) {
+                    this.lights.removeLight(light);
+                    this.itemLightsArray.splice(index, 1);
+                    item.destroy
+                }
         });
 
         //ui updates--------------------------------
@@ -327,12 +359,16 @@ class GameScene extends Phaser.Scene {
         //Update the fuel bar
         if(this.fuelBar){
             this.fuelBar.clear()
-            this.fuelBar = this.makeFuelBar(this.gameWidth - 11, this.gameHeight * .71, '0xff6984', this.fuelUsed)
+            this.fuelBar = this.makeFuelBar(this.gameWidth - 11, this.gameHeight * .7051, '0xff6984', this.fuelUsed)
         }
 
         if (this.fuelUsed <= 0 && this.gameOverStatus == false) {
             this.gameOver()
             this.gameOverStatus == true
+        }
+
+        if (this.totalFuel >= 100) {
+            this.totalFuel = 100;
         }
         
         let speedPercentage = 0 - (this.currentSpeed * -.02 )
@@ -346,6 +382,19 @@ class GameScene extends Phaser.Scene {
         if (enterJustPressed && this.gameOverStatus == true) {
             this.scene.start('GameSceneKey')
         }
+
+
+        //dialogue------------------------------------------------
+        // if (this.currentCharIndex < this.introText.length) {
+        //     this.dialogueText.text += this.introText[this.currentCharIndex];
+        //     this.currentCharIndex++; 
+        // }
+        // if (this.currentCharIndex >= this.introText.length && this.tweenPlayed == false) {
+        //     this.time.removeEvent(this.updateText);
+        //     this.currentCharIndex = this.introText.length
+        //     this.introTextTween.play(); 
+        //     this.tweenPlayed = true
+        // }
     }
 }
 
