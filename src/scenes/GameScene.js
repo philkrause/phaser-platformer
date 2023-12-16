@@ -1,4 +1,5 @@
 import * as Config from '../config/constants';
+import dialogue from '../scripts/dialogue';
 
 class GameScene extends Phaser.Scene {
     constructor(config) {
@@ -7,6 +8,10 @@ class GameScene extends Phaser.Scene {
         this.gameHeight = Config.GAME_HEIGHT
         this.gameWidth = Config.GAME_WIDTH
 
+        this.dialogueGen = dialogue;
+        this.dialogues = [];
+        this.dCount = 0;
+        this.textCount = 0;
         this.player;
         this.playerSpeed = Config.PLAYER_SPEED;
         this.playerHit;
@@ -17,6 +22,7 @@ class GameScene extends Phaser.Scene {
         this.carArray = []
         this.counterText;
         this.counter = 0;
+        this.timer = 0;
         this.currentCharIndex = 0;
         this.introText;
         this.tweenPlayed = false;
@@ -50,21 +56,24 @@ class GameScene extends Phaser.Scene {
         this.load.image('car2', '../assets/images/car_b.png');
         this.load.image('blue', '../assets/images/blue.png');
         this.load.image('fuel_meter', '../assets/images/fuel_meter.png');
-        this.load.image('fuel','../assets/images/fuel.png')
+        this.load.image('fuel','../assets/images/fuel3.png')
         this.load.image('speedometer', '../assets/images/new_speedometer.png');
         this.load.bitmapFont('carrier_command', '../assets/fonts/carrier_command.png', '../assets/fonts/carrier_command.xml');
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.counter = 0;
+        this.timer = 0;
         this.distanceTraveled = 0;
+        this.dCount = 0;2
         this.hotpink = '#ee82ee'
+        this.gameOverStatus = false;
     }
 
 //CREATE===================================================================================
     create() {
         
         //background
-        this.background = this.add.tileSprite(200,100,this.gameWidth/2,0, 'background').setScrollFactor(0)
+        this.background = this.add.tileSprite(150,100,this.gameWidth/2,0, 'background').setScrollFactor(0)
             .setPipeline("Light2D")
             .setScale(.5)
             .setBlendMode(10)
@@ -73,8 +82,8 @@ class GameScene extends Phaser.Scene {
         this.add.sprite(this.gameWidth - 16,this.gameHeight - 80,'fuel_meter')
         this.speedometer = this.add.sprite(35,this.gameHeight*.8,'speedometer').setScale(.3)
         this.speedText = this.add.bitmapText(this.speedometer.x - 12 ,this.speedometer.y + 10, 'carrier_command', `${this.currentSpeed}mph`).setTint(0xff0000).setScale(.18)
-        this.distanceTraveledText = this.add.bitmapText(5 ,10, 'carrier_command', `distance: ${this.distanceTraveled}`).setTint(0xFFFF).setScale(.18)
-        this.counterText = this.add.bitmapText(5 ,this.distanceTraveledText.y + 10 , 'carrier_command', `counter: ${this.counter}`).setTint(0xFFFF).setScale(.18)
+        this.counterText = this.add.bitmapText(5 ,10, 'carrier_command', `Time: ${this.counter}`).setTint(0xff0000).setScale(.18)
+        this.distanceTraveledText = this.add.bitmapText(5 ,this.counterText.y+10, 'carrier_command', `distance: ${this.distanceTraveled}`).setTint(0xff0000).setScale(.18)
         
         //lighting------------------------------------------
         this.lights.enable().setAmbientColor(0x11111);
@@ -84,11 +93,12 @@ class GameScene extends Phaser.Scene {
             .setSize(10, 10) //sets the bounds of the sprite, doesnt change the size of the sprite
             .setPipeline("Light2D")
             .setCollideWorldBounds(true)
-            .setDrag(100)
+            .setDrag(0)
             .setOrigin(.5,1)
             .setBounce(1)
             .setScale(1.3)
-
+            .setFriction(0)
+            //(0,0,this.gameWidth, this.gameHeight);
         //player light---------------------------------------
         this.playerLight = this.lights.addLight(this.player.x, this.player.y, 128);
         this.tweens.add({
@@ -109,7 +119,7 @@ class GameScene extends Phaser.Scene {
             lifespan: {
                 onEmit: (particle, key, t, value) =>
                 {
-                    return Phaser.Math.Percent(10, 0, 50) * 500;
+                    return Phaser.Math.Percent(50, 0, 50) * 500;
                 }
             },
             alpha: {
@@ -155,8 +165,7 @@ class GameScene extends Phaser.Scene {
 
         //fuel
         this.totalFuel = 100
-        this.fuelUsed = this.distanceTraveled * .8
-        this.fuelBar = this.makeFuelBar(this.gameWidth - 11, 107, '0x2eec71', this.fuelUsed)
+        this.fuelBar = this.makeFuelBar(this.gameWidth - 11, 107, '0xb1ff47', this.fuelUsed)
         this.speedBar = this.makeSpeedBar(20, 200, '0x2eec71', this.currentSpeed)
 
         this.carCollision = (car1,car2) => {
@@ -172,7 +181,7 @@ class GameScene extends Phaser.Scene {
         this.gameOver = () => {
             this.gameOverStatus = true;
             this.gameOverText = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .4 ,'carrier_command',`GAME OVER!`).setTint(0xff0000).setOrigin(.5).setScale(.3);
-            this.playerStatsText = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .6 ,'carrier_command',`Distance: ${this.distanceTraveled.toFixed(2)}mi\n\nTime: ${(this.counter/60).toFixed(2)} sec`).setTint(0xff0000).setOrigin(.5).setScale(.2);
+            this.playerStatsText = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .6 ,'carrier_command',`Distance: ${this.distanceTraveled.toFixed(2)}mi\n\nTime: ${(this.timer/60).toFixed(2)} sec`).setTint(0xff0000).setOrigin(.5).setScale(.2);
             this.playAgainButton = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .7, 'carrier_command',`Press Enter to play again`).setTint(0xff0000).setOrigin(.5).setScale(.2);
             this.tweens.add({
                 targets:[this.gameOverText],
@@ -213,7 +222,7 @@ class GameScene extends Phaser.Scene {
 
         this.createPoints = (points,itemx,itemy) => {
             // Create the text at a specific position (adjust x and y coordinates)
-            let text = this.add.bitmapText(itemx,itemy, 'carrier_command',`${points}`).setTint(0xff0000).setOrigin(.5).setScale(.2);
+            let text = this.add.bitmapText(itemx,itemy, 'carrier_command',`${points}`).setTint('0xb1ff47').setOrigin(.5).setScale(.2);
 
             text.setOrigin(0.5);
 
@@ -230,117 +239,108 @@ class GameScene extends Phaser.Scene {
             });
         }
 
+        // Create an instance of DialogueManager
 
-        //dialogue------------------------------------------------
-        // Set up variables to track the displayed text and index
-        // this.dialogueText = this.add.bitmapText(this.gameWidth * .25, this.gameHeight * .5, 'carrier_command').setScale(.18);
-
-        // this.introText = 'chicago 3258 A.D.';  
-       
-        // this.currentCharIndex = 0;
-        // this.introTextTween = this.tweens.add({
-        //     targets: [this.dialogueText],
-        //     y: -60,
-        //     alpha: 0,
-        //     duration: 6000,
-        //     paused: true, // Start the tween as paused
-        //     onComplete: () => {
-        //         this.dialogueText.text = ''; // Clear the text once faded out
-        //     }
-        // });
-
+        // Adding dialogues to the queue
+        this.dialogueGen(this,"Chicago 3285", 3000, this.gameHeight/2);
+        this.dialogues = [
+                        "Unit 323 report in.",
+                        // "Delivery to 3289 N Laselle.",
+                        // "120 thousand Miles Away",
+                        // "1 minute until the package explodes.",
+                        // "On my way.",
+                        // "You have 3 points remaining on your license"
+                    ];
+        
     }
     
 //UPDATE===================================================================================
     update() {
-
-        //calculate speed
-        this.currentSpeed = (1000/this.player.y) * 400;
-        this.speedText.setText(`${Math.ceil(this.currentSpeed)}`)
-        this.background.tilePositionY -= 1000/(this.player.y);
-
-        //UI#EB09FE
         //create live counter
         this.counter += 1
+        this.textCount += 1
+        if (this.textCount >= 400 && this.dCount <= this.dialogues.length -1) {
+                this.dialogueGen(this,`${this.dialogues[this.dCount]}`,1000,this.gameHeight*.9)
+                this.dCount += 1
+                this.textCount = 0
+            }
+
+
+        //calculate speed
+        this.speedText.setText(`${Math.ceil(this.currentSpeed)}`)
+        this.background.tilePositionY -= 1300/(this.player.y);
+        this.currentSpeed = (1000/this.player.y) * 400;
         
-        this.distanceTraveled += (this.currentSpeed/60) /60 /60
-        this.distanceTraveledText.setText(`distance: ${this.distanceTraveled.toFixed(2)}mi`)
-        this.counterText.setText(`time: ${(this.counter/60).toFixed(2)}`)
-
-         //player movement-----------------------------------------
-         if (this.cursors.left.isDown)
-         {
-             this.player.setVelocityX(Config.PLAYER_SPEED * -1);
-         }
-         else if (this.cursors.right.isDown)
-         {
-             this.player.setVelocityX(Config.PLAYER_SPEED);
-         }
-   
-         else if (this.cursors.up.isDown)
-         {
-             this.player.setVelocityY(Config.PLAYER_SPEED * -1);
-         }
- 
-         else if (this.cursors.down.isDown) 
-         {   
-             this.player.setVelocityY(Config.PLAYER_SPEED )
-         }
-         else
-         {
-             this.player.setVelocityX(0);
-             this.player.setVelocityY(0);
-         }
-
+        
+        
+        if(this.dCount === this.dialogues.length && !this.gameOverStatus){
+            this.timer += 1
+            this.totalFuel -= .05
+            let realTime = this.timer/60
+            this.distanceTraveled += (realTime.toFixed(2) * this.currentSpeed)/3600
+            this.distanceTraveledText.setText(`distance: ${this.distanceTraveled.toFixed(2)}mi`)
+            this.counterText.setText(`time: ${(this.timer/60).toFixed(2)}`)
+        }
         //player lighting-------------------
         this.playerLight.x = this.player.x;
         this.playerLight.y = this.player.y;
 
+        this.player.y >= 40 ? true : this.player.y = 40;
+        
         //Fuel------------------------------
         //check multiple of %x that equals 0 //basically the lower x is, the more spawns
-        if (this.counter %80 == 0){
-            this.spawnItem('fuel',.04,400,400)
+        if (this.counter %200 == 0){
+            this.spawnItem('fuel',.08,110,200)
         }
 
         //Spawn Traffic
         if (this.counter %50 == 0){
-            this.spawnItem('car1',1.4,8,10)
+            this.spawnItem('car1',1.6,8,10)
         }
+        this.currentSpeed = (1000/this.player.y) * 400;
 
-        //loop through ALL ITEMS and determine each outcome
+
+
+        //COLLISIONS WITH ITEMS ---------------------------------------------------
         this.itemLightsArray.forEach((eachItem, index) => {
             const item = eachItem.allItems;
             const light = eachItem.light;
 
             light.x = item.x;
             light.y = item.y;
-
-            //Collisions-----------------------------------------------------
-            let carCollision = (player, collectedItem) => {
-                // Check if player hits car
-                if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "car1") {
-                this.hitCar(player)
-                    // Remove the item from the array and destroy it
-                    this.lights.removeLight(light);
-                    this.itemLightsArray.splice(index, 1);
-                    item.destroy();
-                }
-                if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "fuel") {
+            let carCollision;
+            if(this.dCount >= this.dialogues.length + 10){
+                
+                //Collisions-----------------------------------------------------
+                carCollision = (player, collectedItem) => {
+                    
+                    // Check if player hits car
+                    if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "car1") {
+                    this.hitCar(player)
                         // Remove the item from the array and destroy it
-                        this.totalFuel += 2;
-                        this.createPoints(1000,eachItem.allItems.x,eachItem.allItems.y)
-                        this.tweens.add({
-                            targets: this.background.tilePosition,
-                            tilePositionY: -2000, // Set the target Y position
-                            duration: 1000, // Duration of the tween in milliseconds
-                            ease: 'Linear', // Easing function (e.g., Linear, Quad, etc.)
-                            repeat: -1, // Repeat indefinitely (-1 means repeat forever)
-                        });
                         this.lights.removeLight(light);
                         this.itemLightsArray.splice(index, 1);
                         item.destroy();
                     }
-            };
+                    
+                    //Check if player hits fuel
+                    if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "fuel") {
+                            // Remove the item from the array and destroy it
+                            this.totalFuel += 20;
+                            this.createPoints(1000,eachItem.allItems.x,eachItem.allItems.y)
+                            this.tweens.add({
+                                targets: this.background.tilePosition,
+                                tilePositionY: -2000, // Set the target Y position
+                                duration: 1000, // Duration of the tween in milliseconds
+                                ease: 'Linear', // Easing function (e.g., Linear, Quad, etc.)
+                                repeat: -1, // Repeat indefinitely (-1 means repeat forever)
+                            });
+                            this.lights.removeLight(light);
+                            this.itemLightsArray.splice(index, 1);
+                            item.destroy();
+                        }
+                };
+            }
                 //if player collects fuel
                 this.physics.add.overlap(this.player,eachItem.allItems, carCollision) 
 
@@ -352,17 +352,14 @@ class GameScene extends Phaser.Scene {
                 }
         });
 
-        //ui updates--------------------------------
-        // Calculate the percentage for the fuel bar
-        this.fuelUsed = this.totalFuel - (this.distanceTraveled * .2);
 
         //Update the fuel bar
         if(this.fuelBar){
             this.fuelBar.clear()
-            this.fuelBar = this.makeFuelBar(this.gameWidth - 11, this.gameHeight * .7051, '0xff6984', this.fuelUsed)
+            this.fuelBar = this.makeFuelBar(this.gameWidth - 11, this.gameHeight * .7051, '0xb1ff47', this.totalFuel)
         }
 
-        if (this.fuelUsed <= 0 && this.gameOverStatus == false) {
+        if (this.totalFuel<= 0 && this.gameOverStatus == false) {
             this.gameOver()
             this.gameOverStatus == true
         }
@@ -383,18 +380,30 @@ class GameScene extends Phaser.Scene {
             this.scene.start('GameSceneKey')
         }
 
+        //player movement-----------------------------------------
+        if (this.cursors.left.isDown)
+        {
+            this.player.setVelocityX(Config.PLAYER_SPEED * -1);
+        }
+        else if (this.cursors.right.isDown)
+        {
+            this.player.setVelocityX(Config.PLAYER_SPEED);
+        }
 
-        //dialogue------------------------------------------------
-        // if (this.currentCharIndex < this.introText.length) {
-        //     this.dialogueText.text += this.introText[this.currentCharIndex];
-        //     this.currentCharIndex++; 
-        // }
-        // if (this.currentCharIndex >= this.introText.length && this.tweenPlayed == false) {
-        //     this.time.removeEvent(this.updateText);
-        //     this.currentCharIndex = this.introText.length
-        //     this.introTextTween.play(); 
-        //     this.tweenPlayed = true
-        // }
+        else if (this.cursors.up.isDown)
+        {
+            this.player.setVelocityY(Config.PLAYER_SPEED * -1);
+        }
+
+        else if (this.cursors.down.isDown) 
+        {   
+            this.player.setVelocityY(Config.PLAYER_SPEED )
+        }
+        else
+        {
+            this.player.setVelocityX(0);
+            this.player.setVelocityY(0);
+        }
     }
 }
 
