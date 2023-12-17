@@ -382,7 +382,7 @@ export default class GameScene extends Phaser.Scene {
                     
                     // Check if player hits car
                     if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "car1") {
-                        //this.hitCar(player)
+                        this.hitCar(player)
                         // Remove the item from the array and destroy it
                         //this.lights.removeLight(light);
                         this.itemLightsArray.splice(index, 1);
