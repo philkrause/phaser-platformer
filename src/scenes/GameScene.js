@@ -505,7 +505,7 @@ export default class GameScene extends Phaser.Scene {
             this.player.alpha = 0
             this.emitter.destroy();
             if(this.explosionCounter >= 5){
-                this.gameOver('Mission Complete')
+                this.gameOver('happy bday\n\n  mtry1')
                 this.exploded = true;
                 this.gameOverStatus == true
 
