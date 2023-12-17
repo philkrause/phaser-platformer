@@ -1,5 +1,5 @@
 import * as Config from '../config/constants';
-import dialogue from '../scripts/dialogue';
+import dialogue from './dialogue';
 
 export default class GameScene extends Phaser.Scene {
     handlerScene = null

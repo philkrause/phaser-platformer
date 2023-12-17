@@ -1,7 +1,7 @@
-import Handler from './scripts/handler.js'
+import Handler from './scenes/handler.js'
 import Game from './scenes/GameScene.js'
-import Preload from './scripts/preload.js'
-import Hub from './scripts/hub.js'
+import Preload from './scenes/preload.js'
+import Hub from './scenes/hub.js'
 import { DEBUG_MODE } from './config/constants.js'
 
 // Aspect Ratio 16:9 - Portrait
