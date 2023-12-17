@@ -393,7 +393,7 @@ export default class GameScene extends Phaser.Scene {
                     if (collectedItem === eachItem.allItems && eachItem.allItems.texture.key === "fuel") {
                             
                         this.totalFuel += 20;
-                        this.createPoints(20,eachItem.allItems.x,eachItem.allItems.y)
+                        this.createPoints(100,eachItem.allItems.x,eachItem.allItems.y)
                         this.tweens.add({
                             targets: this.background.tilePosition,
                             tilePositionY: -2000, // Set the target Y position
