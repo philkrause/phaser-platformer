@@ -247,7 +247,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
         }
-        this.dialogueGen = (sbatext, durat,ypos) => {
+        this.dialogueGen = (scene,text,durat,ypos) => {
             // Set up variables to track the displayed text and index
             if(scene){
                 scene.dialogueText = scene.add.bitmapText(scene.gameWidth * 0.5, ypos, 'carrier_command')
@@ -300,13 +300,14 @@ export default class GameScene extends Phaser.Scene {
         // Create an instance of DialogueManager
         let randomAddress = Phaser.Math.Between(1,9998)
         // Adding dialogues to the queue
-        this.dialogueGen(this,"Chicago 5285 A.D.", 3000, this.gameHeight/2);
+        this.dialogueGen(this,"Chicago 5285 A.D.", 2000, this.gameHeight/2);
         this.dialogues = [
                         `unit ${randomAddress} report in`,
                         "this is your final mission",
                         `you have 60 seconds`,
                         "before the package explodes",
-                        "dont run out of fuel"
+                        "do not run out of fuel",
+                        "good luck"
         ];
 
         //gameover---------------------------------------------------
