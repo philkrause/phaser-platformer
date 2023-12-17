@@ -7,7 +7,7 @@ export default class GameScene extends Phaser.Scene {
         super({ key: 'GameSceneKey' });
 
         this.dialogueGen;;
-        this.dialogues = [];
+        this.dialogues;
         this.dCount = 0;
         this.textCount = 0;
         this.player;
@@ -247,7 +247,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
         }
-        this.dialogueGen = (scene, text, durat,ypos) => {
+        this.dialogueGen = (sbatext, durat,ypos) => {
             // Set up variables to track the displayed text and index
             if(scene){
                 scene.dialogueText = scene.add.bitmapText(scene.gameWidth * 0.5, ypos, 'carrier_command')
@@ -302,11 +302,11 @@ export default class GameScene extends Phaser.Scene {
         // Adding dialogues to the queue
         this.dialogueGen(this,"Chicago 5285 A.D.", 3000, this.gameHeight/2);
         this.dialogues = [
-                        `mtry1 report in`,
+                        `unit ${randomAddress} report in`,
                         "this is your final mission",
-                        `get to your computer`,
-                        "before it explodes",
-                        "there is no time to waste"
+                        `you have 60 seconds`,
+                        "before the package explodes",
+                        "dont run out of fuel"
         ];
 
         //gameover---------------------------------------------------
@@ -505,7 +505,7 @@ export default class GameScene extends Phaser.Scene {
             this.player.alpha = 0
             this.emitter.destroy();
             if(this.explosionCounter >= 5){
-                this.gameOver('happy bday\n\n  mtry1')
+                this.gameOver('Mission Complete')
                 this.exploded = true;
                 this.gameOverStatus == true
 
