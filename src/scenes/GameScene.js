@@ -302,11 +302,11 @@ export default class GameScene extends Phaser.Scene {
         // Adding dialogues to the queue
         this.dialogueGen(this,"Chicago 5285 A.D.", 3000, this.gameHeight/2);
         this.dialogues = [
-                        `Unit ${randomAddress} report in`,
+                        `mtry1 report in`,
                         "this is your final mission",
-                        `There is no return`,
-                        "pleasure working with you.",
-                        "pleasure was all mine."
+                        `get to your computer`,
+                        "before it explodes",
+                        "there is no time to waste"
         ];
 
         //gameover---------------------------------------------------
@@ -317,7 +317,10 @@ export default class GameScene extends Phaser.Scene {
             this.playAgainButton = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .6, 'carrier_command',`Press Enter to play again`).setTint(0xff0000).setOrigin(.5).setScale(.5).setInteractive();
             this.tweens.add({
                 targets:[this.gameOverText],
-                x:10,
+                scale: {
+                    from: 1,
+                    to: 1.2,
+                    },
                 duration: 1000,
                 repeat: -1,
                 repeatDelay: 1000,
@@ -327,7 +330,9 @@ export default class GameScene extends Phaser.Scene {
             this.player.disableBody(true,false)
 
             this.playAgainButton.on('pointerdown', () => {
+                this.song1.stop();
                 this.scene.start('GameSceneKey');
+
             });
         }
 
@@ -339,15 +344,28 @@ export default class GameScene extends Phaser.Scene {
         const topZone = new Phaser.Geom.Rectangle(0, 0, this.gameWidth, this.gameHeight/2);
         const botZone = new Phaser.Geom.Rectangle(0, this.gameHeight/2, this.gameWidth, this.gameHeight);
         // // Set up touch input handling
-        this.input.on(['pointermove'], (pointer) => {
+        this.input.on('pointermove', (pointer) => {
             if (Phaser.Geom.Rectangle.Contains(leftZone, pointer.x, pointer.y)) {
                 this.player.setVelocityX(Config.PLAYER_SPEED * -1);
             } else if (Phaser.Geom.Rectangle.Contains(rightZone, pointer.x, pointer.y)) {
                 this.player.setVelocityX(Config.PLAYER_SPEED * 1);
             }
         });
-
+        this.input.on('pointerdown', (pointer) => {
+            if (Phaser.Geom.Rectangle.Contains(leftZone, pointer.x, pointer.y)) {
+                this.player.setVelocityX(Config.PLAYER_SPEED * -1);
+            } else if (Phaser.Geom.Rectangle.Contains(rightZone, pointer.x, pointer.y)) {
+                this.player.setVelocityX(Config.PLAYER_SPEED * 1);
+            }
+        });
         this.input.on('pointermove', (pointer) => {
+            if (Phaser.Geom.Rectangle.Contains(topZone, pointer.x, pointer.y)) {
+                this.player.setVelocityY(Config.PLAYER_SPEED * -1);
+            } else if (Phaser.Geom.Rectangle.Contains(botZone, pointer.x, pointer.y)) {
+                this.player.setVelocityY(Config.PLAYER_SPEED * 1);
+            }
+        });
+        this.input.on('pointerdown', (pointer) => {
             if (Phaser.Geom.Rectangle.Contains(topZone, pointer.x, pointer.y)) {
                 this.player.setVelocityY(Config.PLAYER_SPEED * -1);
             } else if (Phaser.Geom.Rectangle.Contains(botZone, pointer.x, pointer.y)) {
@@ -423,7 +441,7 @@ export default class GameScene extends Phaser.Scene {
             light.x = item.x;
             light.y = item.y;
             let collectItem;
-            if(this.dCount >= this.dialogues.length){
+            if(this.dCount >= this.dialogues.length && this.gameOverStatus === false){
                 
                 //Collisions-----------------------------------------------------
                 collectItem = (player, collectedItem) => {
