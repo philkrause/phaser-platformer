@@ -2,7 +2,7 @@ export default dialogue = (scene, text, durat,ypos) => {
     // Set up variables to track the displayed text and index
     if(scene){
         scene.dialogueText = scene.add.bitmapText(scene.gameWidth * 0.5, ypos, 'carrier_command')
-            .setScale(0.18)
+            .setScale(.5)
             .setOrigin(0.5);
 
         scene.introText = text;
