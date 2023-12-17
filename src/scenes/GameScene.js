@@ -265,7 +265,7 @@ export default class GameScene extends Phaser.Scene {
         this.gameOver = (status) => {
             this.gameOverStatus = true;
             this.gameOverText = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .4 ,'carrier_command',status).setTint(0xff0000).setOrigin(.5).setScale(.8);
-            this.playerStatsText = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .5 ,'carrier_command',`Distance: ${this.distanceTraveled.toFixed(2)}mi\n\nTime: ${(this.timer/60).toFixed(2)} sec`).setTint(0xff0000).setOrigin(.5).setScale(.5);
+            this.playerStatsText = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .5 ,'carrier_command',`Distance: ${this.distanceTraveled.toFixed(2)}mi\n\nTime: 60.00 sec`).setTint(0xff0000).setOrigin(.5).setScale(.5);
             this.playAgainButton = this.add.bitmapText(this.gameWidth * .5, this.gameHeight * .6, 'carrier_command',`Press Enter to play again`).setTint(0xff0000).setOrigin(.5).setScale(.5).setInteractive();
             this.tweens.add({
                 targets:[this.gameOverText],
